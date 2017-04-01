@@ -127,13 +127,13 @@ public class ADNS3080 {
         // ------------ REG ADDR WRITE -------------------
         dataGoingOut = (byte)(reg | 0x80);
         for (int i = 0; i < 8; i++) {
-            SCLK.setState(false); // boom - clock the data out
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                 MOSI.setState(true);
             }
             else {
                 MOSI.setState(false);
             }
+            SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
             dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
         }
@@ -144,13 +144,13 @@ public class ADNS3080 {
         for (int byteIndex = 0; byteIndex < length; byteIndex++) {
             dataGoingOut = writeData[byteIndex];
             for (int i = 0; i < 8; i++) {
-                SCLK.setState(false); // boom - clock the data out
                 if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                     MOSI.setState(true);
                 }
                 else {
                     MOSI.setState(false);
                 }
+                SCLK.setState(false); // boom - clock the data out
                 SCLK.setState(true); // (smaller boom)
                 dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
             }
@@ -169,13 +169,13 @@ public class ADNS3080 {
         // ------------ REG ADDR WRITE -------------------
         dataGoingOut = reg; // note lack of a 0x80 bitwise or here
         for (int i = 0; i < 8; i++) {
-            SCLK.setState(false); // boom - clock the data out
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                 MOSI.setState(true);
             }
             else {
                 MOSI.setState(false);
             }
+            SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
             dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
         }
@@ -188,10 +188,10 @@ public class ADNS3080 {
             dataComingIn = (byte)(0x00);
             for (int i = 0; i < 8; i++) {
                 SCLK.setState(false);
+                SCLK.setState(true);
                 if (MISO.getState()) { // if received MSB is 1
                     dataComingIn |= 1;
                 }
-                SCLK.setState(true);
                 dataComingIn = (byte)(dataComingIn << 1);
             }
             outputBuffer[byteIndex] = dataComingIn;
