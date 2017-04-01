@@ -177,7 +177,7 @@ public class ADNS3080 {
             }
             SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
-            dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
+            dataGoingOut <<= 1; // Discard most-significant bit and proceed
         }
 
         delayMicroseconds(75);
@@ -192,7 +192,7 @@ public class ADNS3080 {
                 if (MISO.getState()) { // if received MSB is 1
                     dataComingIn |= 1;
                 }
-                dataComingIn = (byte)(dataComingIn << 1);
+                dataComingIn <<= 1;
             }
             outputBuffer[byteIndex] = dataComingIn;
         }
