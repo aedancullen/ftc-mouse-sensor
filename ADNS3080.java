@@ -71,6 +71,13 @@ public class ADNS3080 {
         return ret[0] == ADNS3080_PRODUCT_ID_VALUE;
     }
 
+    public void clearSensor() {
+        spiWrite(ADNS3080_MOTION_CLEAR, new byte[]{(byte)(0xff)}, 1);
+        this.dx = 0;
+        this.dy = 0;
+        this.squal = 0;
+    }
+
 
     public void updateSensor() {
         byte[] ret = spiRead(ADNS3080_MOTION_BURST, 4);
@@ -135,7 +142,7 @@ public class ADNS3080 {
             }
             SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
-            dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
+            dataGoingOut <<= 1; // Discard most-significant bit and proceed
         }
 
         delayMicroseconds(75);
@@ -152,7 +159,7 @@ public class ADNS3080 {
                 }
                 SCLK.setState(false); // boom - clock the data out
                 SCLK.setState(true); // (smaller boom)
-                dataGoingOut = (byte)(dataGoingOut << 1); // Discard most-significant bit and proceed
+                dataGoingOut <<= 1; // Discard most-significant bit and proceed
             }
         }
 
