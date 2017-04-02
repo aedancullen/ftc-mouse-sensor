@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DigitalChannelController;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -177,10 +179,10 @@ public class ADNS3080 {
         dataGoingOut = reg; // note lack of a 0x80 bitwise or here
         for (int i = 0; i < 8; i++) {
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
-                MOSI.setState(true);
+                MOSI.setState(true); Log.d("spiRead", "writing addr bit HIGH");
             }
             else {
-                MOSI.setState(false);
+                MOSI.setState(false); Log.d("spiRead", "writing addr bit LOW");
             }
             SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
@@ -197,8 +199,9 @@ public class ADNS3080 {
                 SCLK.setState(false);
                 SCLK.setState(true);
                 if (MISO.getState()) { // if received MSB is 1
-                    dataComingIn |= 1;
+                    dataComingIn |= 1; Log.d("spiRead", "got read bit HIGH");
                 }
+                else {Log.d("spiRead", "got read bit LOW");}
                 dataComingIn <<= 1;
             }
             outputBuffer[byteIndex] = dataComingIn;
