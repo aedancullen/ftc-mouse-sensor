@@ -50,7 +50,6 @@ public class ADNS3080 {
 
         NCS = hardwareMap.digitalChannel.get("NCS");
         NCS.setMode(DigitalChannelController.Mode.OUTPUT);
-        NCS.setState(true);
 
         MISO = hardwareMap.digitalChannel.get("MISO");
         MISO.setMode(DigitalChannelController.Mode.INPUT);
@@ -60,11 +59,9 @@ public class ADNS3080 {
 
         SCLK = hardwareMap.digitalChannel.get("SCLK");
         SCLK.setMode(DigitalChannelController.Mode.OUTPUT);
-        SCLK.setState(true);
 
         RST = hardwareMap.digitalChannel.get("RST");
         RST.setMode(DigitalChannelController.Mode.OUTPUT);
-        RST.setState(false);
 
 
 
@@ -76,6 +73,12 @@ public class ADNS3080 {
 
         SCLK_VER = hardwareMap.digitalChannel.get("SCLK_VER");
         SCLK_VER.setMode(DigitalChannelController.Mode.INPUT);
+
+
+        NCS.setState(true);
+        while (NCS_VER.getState() != true) {}
+        SCLK.setState(true);
+        while (SCLK_VER.getState() != true) {}
 
 
         reset();
