@@ -165,6 +165,10 @@ public class ADNS3080 {
         // ------------ REG ADDR WRITE -------------------
         dataGoingOut = (byte)(reg | 0x80);
         for (int i = 0; i < 8; i++) {
+
+            SCLK.setState(false); // boom - clock the data out
+            while (SCLK_VER.getState() != false) {}
+
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                 MOSI.setState(true);
                 while (MOSI_VER.getState() != true) {}
@@ -175,9 +179,11 @@ public class ADNS3080 {
                 while (MOSI_VER.getState() != false) {}
                 Log.d("spiWrite", "writing addr bit LOW");
             }
-            SCLK.setState(false); // boom - clock the data out
-            SCLK.setState(true); // (smaller boom)
             dataGoingOut <<= 1; // Discard most-significant bit and proceed
+
+            SCLK.setState(true); // (smaller boom)
+            while (SCLK_VER.getState() != true) {}
+
         }
 
         // delayMicroseconds(75);
@@ -186,6 +192,10 @@ public class ADNS3080 {
         for (int byteIndex = 0; byteIndex < length; byteIndex++) {
             dataGoingOut = writeData[byteIndex];
             for (int i = 0; i < 8; i++) {
+
+                SCLK.setState(false); // boom - clock the data out
+                while (SCLK_VER.getState() != false) {}
+
                 if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                     MOSI.setState(true);
                     while (MOSI_VER.getState() != true) {}
@@ -196,11 +206,11 @@ public class ADNS3080 {
                     while (MOSI_VER.getState() != false) {}
                     Log.d("spiWrite", "writing data bit LOW");
                 }
-                SCLK.setState(false); // boom - clock the data out
-                while (SCLK_VER.getState() != false) {}
+                dataGoingOut <<= 1; // Discard most-significant bit and proceed
+
                 SCLK.setState(true); // (smaller boom)
                 while (SCLK_VER.getState() != true) {}
-                dataGoingOut <<= 1; // Discard most-significant bit and proceed
+
             }
         }
 
@@ -220,6 +230,10 @@ public class ADNS3080 {
         // ------------ REG ADDR WRITE -------------------
         dataGoingOut = reg; // note lack of a 0x80 bitwise or here
         for (int i = 0; i < 8; i++) {
+
+            SCLK.setState(false); // boom - clock the data out
+            while (SCLK_VER.getState() != false) {}
+
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                 MOSI.setState(true);
                 while (MOSI_VER.getState() != true) {}
@@ -230,11 +244,11 @@ public class ADNS3080 {
                 while (MOSI_VER.getState() != false) {}
                 Log.d("spiRead", "writing addr bit LOW");
             }
-            SCLK.setState(false); // boom - clock the data out
-            while (SCLK_VER.getState() != false) {}
+            dataGoingOut <<= 1; // Discard most-significant bit and proceed
+
             SCLK.setState(true); // (smaller boom)
             while (SCLK_VER.getState() != true) {}
-            dataGoingOut <<= 1; // Discard most-significant bit and proceed
+
         }
 
         // delayMicroseconds(75);
@@ -244,15 +258,19 @@ public class ADNS3080 {
         for (int byteIndex = 0; byteIndex < length; byteIndex++) {
             dataComingIn = (byte)(0x00);
             for (int i = 0; i < 8; i++) {
+
                 SCLK.setState(false);
                 while (SCLK_VER.getState() != false) {}
-                SCLK.setState(true);
-                while (SCLK_VER.getState() != true) {}
+
                 if (MISO.getState()) { // if received MSB is 1
                     dataComingIn |= 1; Log.d("spiRead", "got read bit HIGH");
                 }
                 else {Log.d("spiRead", "got read bit LOW");}
                 dataComingIn <<= 1;
+
+                SCLK.setState(true);
+                while (SCLK_VER.getState() != true) {}
+
             }
             outputBuffer[byteIndex] = dataComingIn;
         }
