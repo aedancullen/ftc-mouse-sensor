@@ -21,6 +21,10 @@ public class ADNS3080 {
     DigitalChannel SCLK;
     DigitalChannel RST;
 
+    DigitalChannel NCS_VER;
+    DigitalChannel MOSI_VER;
+    DigitalChannel SCLK_VER;
+
 
     private byte ADNS3080_PRODUCT_ID =          0x00;
     private byte ADNS3080_MOTION =              0x02;
@@ -62,6 +66,18 @@ public class ADNS3080 {
         RST.setMode(DigitalChannelController.Mode.OUTPUT);
         RST.setState(false);
 
+
+
+        NCS_VER = hardwareMap.digitalChannel.get("NCS_VER");
+        NCS_VER.setMode(DigitalChannelController.Mode.INPUT);
+
+        MOSI_VER = hardwareMap.digitalChannel.get("MOSI_VER");
+        MOSI_VER.setMode(DigitalChannelController.Mode.INPUT);
+
+        SCLK_VER = hardwareMap.digitalChannel.get("SCLK_VER");
+        SCLK_VER.setMode(DigitalChannelController.Mode.INPUT);
+
+
         reset();
         if (!verifySensor()) {
             throw new IOException("ADNS3080 product ID verification failed");
@@ -82,11 +98,15 @@ public class ADNS3080 {
 
 
     public void updateSensor() {
-        byte[] ret = spiRead(ADNS3080_MOTION_BURST, 4);
-        byte motion = ret[0];
-        this.dx = ret[1];
-        this.dy = ret[2];
-        this.squal = ret[3];
+        byte[] ret;
+
+        ret = spiRead(ADNS3080_DELTA_X, 1);
+        byte x = ret[0];
+        ret = spiRead(ADNS3080_DELTA_Y, 1);
+        byte y = ret[0];
+
+        this.dx = x;
+        this.dy = y;
     }
 
 
@@ -112,11 +132,18 @@ public class ADNS3080 {
         catch (InterruptedException e) {}
     }
 
+    private void delayMilliseconds(int millis) {
+        try {
+            Thread.sleep(millis);
+        }
+        catch (InterruptedException e) {}
+    }
+
     private void reset() {
         RST.setState(true);
-        delayMicroseconds(10);
+        delayMilliseconds(500);
         RST.setState(false);
-        delayMicroseconds(500);
+        delayMilliseconds(500);
 
     }
 
@@ -130,7 +157,9 @@ public class ADNS3080 {
 
     private void spiWrite(byte reg, byte[] writeData, int length) {
         SCLK.setState(true);
+        while (SCLK_VER.getState() != true) {}
         NCS.setState(false);
+        while (NCS_VER.getState() != false) {}
         byte dataGoingOut;
 
         // ------------ REG ADDR WRITE -------------------
@@ -138,16 +167,20 @@ public class ADNS3080 {
         for (int i = 0; i < 8; i++) {
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                 MOSI.setState(true);
+                while (MOSI_VER.getState() != true) {}
+                Log.d("spiWrite", "writing addr bit HIGH");
             }
             else {
                 MOSI.setState(false);
+                while (MOSI_VER.getState() != false) {}
+                Log.d("spiWrite", "writing addr bit LOW");
             }
             SCLK.setState(false); // boom - clock the data out
             SCLK.setState(true); // (smaller boom)
             dataGoingOut <<= 1; // Discard most-significant bit and proceed
         }
 
-        delayMicroseconds(75);
+        // delayMicroseconds(75);
 
         // ------------ DATA BYTES WRITE -------------------
         for (int byteIndex = 0; byteIndex < length; byteIndex++) {
@@ -155,23 +188,32 @@ public class ADNS3080 {
             for (int i = 0; i < 8; i++) {
                 if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
                     MOSI.setState(true);
+                    while (MOSI_VER.getState() != true) {}
+                    Log.d("spiWrite", "writing data bit HIGH");
                 }
                 else {
                     MOSI.setState(false);
+                    while (MOSI_VER.getState() != false) {}
+                    Log.d("spiWrite", "writing data bit LOW");
                 }
                 SCLK.setState(false); // boom - clock the data out
+                while (SCLK_VER.getState() != false) {}
                 SCLK.setState(true); // (smaller boom)
+                while (SCLK_VER.getState() != true) {}
                 dataGoingOut <<= 1; // Discard most-significant bit and proceed
             }
         }
 
         NCS.setState(true);
+        while (NCS_VER.getState() != true) {}
 
     }
 
     private byte[] spiRead(byte reg, int length) {
         SCLK.setState(true);
+        while (SCLK_VER.getState() != true) {}
         NCS.setState(false);
+        while (NCS_VER.getState() != false) {}
         byte dataGoingOut;
         byte dataComingIn;
 
@@ -179,17 +221,23 @@ public class ADNS3080 {
         dataGoingOut = reg; // note lack of a 0x80 bitwise or here
         for (int i = 0; i < 8; i++) {
             if ((dataGoingOut & 0xff) >> 7 == 1) { // if MSB is 1
-                MOSI.setState(true); Log.d("spiRead", "writing addr bit HIGH");
+                MOSI.setState(true);
+                while (MOSI_VER.getState() != true) {}
+                Log.d("spiRead", "writing addr bit HIGH");
             }
             else {
-                MOSI.setState(false); Log.d("spiRead", "writing addr bit LOW");
+                MOSI.setState(false);
+                while (MOSI_VER.getState() != false) {}
+                Log.d("spiRead", "writing addr bit LOW");
             }
             SCLK.setState(false); // boom - clock the data out
+            while (SCLK_VER.getState() != false) {}
             SCLK.setState(true); // (smaller boom)
+            while (SCLK_VER.getState() != true) {}
             dataGoingOut <<= 1; // Discard most-significant bit and proceed
         }
 
-        delayMicroseconds(75);
+        // delayMicroseconds(75);
         byte[] outputBuffer = new byte[length];
 
         // ------------ DATA BYTES READ -------------------
@@ -197,7 +245,9 @@ public class ADNS3080 {
             dataComingIn = (byte)(0x00);
             for (int i = 0; i < 8; i++) {
                 SCLK.setState(false);
+                while (SCLK_VER.getState() != false) {}
                 SCLK.setState(true);
+                while (SCLK_VER.getState() != true) {}
                 if (MISO.getState()) { // if received MSB is 1
                     dataComingIn |= 1; Log.d("spiRead", "got read bit HIGH");
                 }
@@ -208,6 +258,7 @@ public class ADNS3080 {
         }
 
         NCS.setState(true);
+        while (NCS_VER.getState() != true) {}
 
         return outputBuffer;
     }
